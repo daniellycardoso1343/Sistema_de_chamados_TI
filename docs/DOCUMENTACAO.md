@@ -366,6 +366,7 @@ A proposta inicial é utilizar Python para o desenvolvimento do backend, integra
 ## 8.3. Banco de dados
 O banco de dados será definido na etapa de modelagem de banco. A proposta é utilizar um banco de dados relacional, o que torna o PostgreSQL uma opção bem forte e a principal.
 
+
 ## 8.4. Interface
 A aplicação terá interface responsiva, priorizando a facilidade de uso e clareza de opções, para maior conforto do usuário.
 
