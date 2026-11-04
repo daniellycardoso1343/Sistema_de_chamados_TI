@@ -364,8 +364,12 @@ O sistema será desenvolvido como uma aplicação web, inicialmente.
 A proposta inicial é utilizar Python para o desenvolvimento do backend, integrado com framework Flask. 
 
 ## 8.3. Banco de dados
-O banco de dados será definido na etapa de modelagem de banco. A proposta é utilizar um banco de dados relacional, o que torna o PostgreSQL uma opção bem forte e a principal.
 
+A modelagem do banco de dados foi desenvolvida utilizando PostgreSQL e dbdiagram.io.
+
+Para consultar a estrutura completa, as tabelas e o diagrama entidade-relacionamento, acesse:
+
+[Documentação do Banco de Dados](./BANCO_DE_DADOS.md).
 
 ## 8.4. Interface
 A aplicação terá interface responsiva, priorizando a facilidade de uso e clareza de opções, para maior conforto do usuário.
