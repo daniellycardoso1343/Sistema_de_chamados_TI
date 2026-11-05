@@ -1,0 +1,285 @@
+// Sistema de Chamados de TI — modelo v2.0 (18 tabelas)
+// Cole este arquivo em https://dbdiagram.io para gerar o diagrama.
+// Todos os timestamps são timestamptz (UTC).
+
+Enum perfil_nome {
+  colaborador
+  tecnico
+  admin
+}
+
+Enum prioridade_chamado {
+  baixa
+  media
+  alta
+}
+
+Enum status_chamado {
+  aberto
+  em_atendimento
+  concluido
+  cancelado
+}
+
+Enum finalidade_token {
+  confirmar_email
+  redefinir_senha
+}
+
+Enum tipo_prazo {
+  atribuicao
+  limite_resolucao
+  previsao
+}
+
+Enum tipo_notificacao {
+  chamado_aberto
+  chamado_atribuido
+  chamado_transferido
+  nova_mensagem
+  status_alterado
+  prioridade_alterada
+  prazo_proximo
+  prazo_vencido
+  selecao_anexos
+}
+
+Table perfis {
+  id integer [pk, increment]
+  nome varchar(30) [not null, unique, note: 'colaborador | tecnico | admin']
+  descricao varchar(150)
+}
+
+Table usuarios {
+  id integer [pk, increment]
+  nome varchar(100) [not null]
+  email varchar(150) [not null, unique]
+  senha_hash varchar(255) [not null]
+  perfil_id integer [not null, ref: > perfis.id]
+  setor varchar(100)
+  ativo boolean [not null, default: false, note: 'false até confirmar o e-mail']
+  email_confirmado_em timestamptz
+  ultimo_login_em timestamptz
+  tentativas_falhas integer [not null, default: 0]
+  bloqueado_ate timestamptz
+  criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz
+}
+
+Table tokens_usuario {
+  id integer [pk, increment]
+  usuario_id integer [not null, ref: > usuarios.id]
+  token_hash varchar(255) [not null, unique]
+  finalidade finalidade_token [not null]
+  expira_em timestamptz [not null]
+  utilizado_em timestamptz
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table dominios_autorizados {
+  id integer [pk, increment]
+  dominio varchar(150) [not null, unique, note: 'ex.: empresa.com.br']
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table categorias {
+  id integer [pk, increment]
+  nome varchar(100) [not null]
+  descricao varchar(255)
+  categoria_pai_id integer [ref: > categorias.id, note: 'null = categoria raiz']
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table prazos_prioridade {
+  prioridade prioridade_chamado [pk]
+  minutos_atribuicao integer [not null, note: 'alta 60 | media 120 | baixa 300']
+  minutos_resolucao integer [not null, note: 'alta 480 | media 630 | baixa 1890']
+  atualizado_em timestamptz
+}
+
+Table configuracoes {
+  chave varchar(60) [pk]
+  valor varchar(255) [not null]
+  descricao varchar(255)
+  atualizado_em timestamptz
+  Note: '''
+    Chaves iniciais: expediente_inicio=08:00, expediente_fim=18:30,
+    dias_uteis=1,2,3,4,5, anexo_max_mb=10, anexo_max_por_envio=5,
+    anexo_max_total_mb=50, anexo_retencao_dias=7, anexo_tolerancia_dias=3,
+    alerta_percentual_prazo=20, login_max_falhas=5, login_bloqueio_min=15
+  '''
+}
+
+Table chamados {
+  id integer [pk, increment]
+  numero varchar(20) [not null, unique, note: 'protocolo legível, ex.: CH-2026-000123']
+  solicitante_id integer [not null, ref: > usuarios.id]
+  tec_responsavel_id integer [ref: > usuarios.id, note: 'null enquanto não atribuído']
+  categoria_id integer [not null, ref: > categorias.id]
+  chamado_relacionado_id integer [ref: > chamados.id, note: 'Fase 2']
+  titulo varchar(250) [not null]
+  descricao text [not null]
+  prioridade_solicitada prioridade_chamado [not null]
+  prioridade prioridade_chamado [not null, note: 'prioridade vigente']
+  status status_chamado [not null, default: 'aberto']
+  solucao_aplicada text [note: 'obrigatória para concluir']
+  solucao_usada_id integer [ref: > solucoes.id, note: 'Fase 2']
+  prazo_atribuicao timestamptz [not null]
+  atribuido_em timestamptz [note: 'primeira atribuição; nunca muda em transferências']
+  limite_resolucao timestamptz [note: 'calculado a partir de atribuido_em']
+  previsao_conclusao timestamptz [note: 'definida pelo técnico; <= limite_resolucao']
+  anexos_decisao_solicitada_em timestamptz [note: 'Fase 2']
+  anexos_decisao_concluida_em timestamptz [note: 'Fase 2']
+  criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz
+  encerrado_em timestamptz
+  cancelado_em timestamptz
+
+  Indexes {
+    status
+    prioridade
+    solicitante_id
+    tec_responsavel_id
+    categoria_id
+    criado_em
+    (status, tec_responsavel_id)
+  }
+
+  Note: '''
+    CHECK (previsao_conclusao IS NULL OR limite_resolucao IS NULL OR previsao_conclusao <= limite_resolucao)
+    CHECK (tec_responsavel_id IS NULL OR tec_responsavel_id <> solicitante_id)
+    CHECK (status <> 'concluido' OR solucao_aplicada IS NOT NULL)
+  '''
+}
+
+Table mensagens {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  autor_id integer [not null, ref: > usuarios.id]
+  conteudo text [not null]
+  criado_em timestamptz [not null, default: `now()`]
+  Note: 'Imutável: sem edição nem exclusão.'
+
+  Indexes {
+    (chamado_id, criado_em)
+  }
+}
+
+Table notas_internas {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  autor_id integer [not null, ref: > usuarios.id]
+  conteudo text [not null]
+  criado_em timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (chamado_id, criado_em)
+  }
+}
+
+Table anexos {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  mensagem_id integer [ref: > mensagens.id, note: 'mensagem de origem, se houver']
+  usuario_id integer [not null, ref: > usuarios.id]
+  nome_original varchar(255) [not null]
+  nome_armazenado varchar(255) [not null, unique, note: 'UUID aleatório']
+  caminho_arquivo varchar(500) [not null, note: 'relativo a instance/uploads']
+  tipo_arquivo varchar(100) [not null, note: 'tipo detectado pelo conteúdo']
+  tamanho_bytes bigint [not null]
+  hash_sha256 varchar(64)
+  preservado boolean [not null, default: false]
+  excluido_em timestamptz [note: 'exclusão lógica; arquivo físico removido']
+  criado_em timestamptz [not null, default: `now()`]
+
+  Indexes {
+    chamado_id
+  }
+}
+
+Table historico_status {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  usuario_id integer [not null, ref: > usuarios.id]
+  status_anterior status_chamado
+  status_novo status_chamado [not null]
+  justificativa text
+  alterado_em timestamptz [not null, default: `now()`]
+}
+
+Table historico_prioridades {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  usuario_id integer [not null, ref: > usuarios.id]
+  prioridade_anterior prioridade_chamado [not null]
+  prioridade_nova prioridade_chamado [not null]
+  justificativa text [not null]
+  alterado_em timestamptz [not null, default: `now()`]
+}
+
+Table historico_atribuicoes {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  tecnico_anterior_id integer [ref: > usuarios.id, note: 'null na primeira atribuição']
+  tecnico_novo_id integer [not null, ref: > usuarios.id]
+  administrador_id integer [not null, ref: > usuarios.id]
+  justificativa text
+  atribuido_em timestamptz [not null, default: `now()`]
+}
+
+Table historico_prazos {
+  id integer [pk, increment]
+  chamado_id integer [not null, ref: > chamados.id]
+  usuario_id integer [not null, ref: > usuarios.id]
+  tipo_prazo tipo_prazo [not null]
+  prazo_anterior timestamptz
+  prazo_novo timestamptz [not null]
+  justificativa text
+  alterado_em timestamptz [not null, default: `now()`]
+}
+
+Table solucoes {
+  id integer [pk, increment]
+  titulo varchar(150) [not null]
+  descricao_problema text [not null]
+  passo_a_passo text [not null]
+  categoria_id integer [ref: > categorias.id]
+  chamado_origem_id integer [ref: > chamados.id]
+  autor_id integer [not null, ref: > usuarios.id]
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz
+  Note: 'Fase 2. Criar índice GIN de busca textual (to_tsvector portuguese) sobre título, problema e passo a passo.'
+}
+
+Table notificacoes {
+  id integer [pk, increment]
+  usuario_id integer [not null, ref: > usuarios.id]
+  chamado_id integer [ref: > chamados.id]
+  tipo tipo_notificacao [not null]
+  titulo varchar(150) [not null]
+  mensagem varchar(500)
+  lida_em timestamptz
+  email_enviado_em timestamptz [note: 'Fase 2']
+  criado_em timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (usuario_id, lida_em)
+  }
+}
+
+Table log_seguranca {
+  id integer [pk, increment]
+  usuario_id integer [ref: > usuarios.id, note: 'null quando o usuário não foi identificado']
+  evento varchar(50) [not null, note: 'login_ok, login_falha, bloqueio, acesso_negado...']
+  ip varchar(45)
+  detalhes text
+  criado_em timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (evento, criado_em)
+    usuario_id
+  }
+}

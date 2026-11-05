@@ -1,104 +1,93 @@
-# 10. Banco de Dados
+# Banco de Dados
 
-## 10.1. Tecnologia
+## 1. Tecnologia
 
-O banco de dados do sistema será desenvolvido utilizando PostgreSQL, um sistema gerenciador de banco de dados relacional.
+PostgreSQL, modelado em DBML ([banco.dbml](banco.dbml)) e visualizado no dbdiagram.io. As tabelas são criadas e versionadas por **migrations** (Flask-Migrate/Alembic), nunca por SQL manual no ambiente.
 
-A modelagem está sendo realizada por meio do dbdiagram.io, utilizando DBML para representar as tabelas, seus atributos e relacionamentos.
+## 2. Tabelas (18)
 
-A implementação física do banco será realizada posteriormente, em ambiente de desenvolvimento local.
-
-## 10.2. Estrutura do banco
-
-O modelo inicial contempla 12 tabelas:
-
+### Acesso e contas
 | Tabela | Finalidade |
 |---|---|
-| perfis | Armazena os níveis de acesso do sistema. |
-| usuarios | Armazena os dados das contas de usuários. |
-| categorias | Organiza categorias e subcategorias dos chamados. |
-| chamados | Armazena as solicitações de suporte. |
-| mensagens | Registra a comunicação entre colaboradores e TI. |
-| notas_internas | Armazena observações privadas da equipe de TI. |
-| anexos | Armazena os metadados e caminhos dos arquivos enviados. |
-| historico_atribuicoes | Registra atribuições e transferências de responsáveis. |
-| historico_status | Registra as alterações de status dos chamados. |
-| solucoes | Armazena soluções reutilizáveis para problemas recorrentes. |
-| tokens_usuario | Gerencia tokens de confirmação de e-mail e recuperação de senha. |
-| historico_prazos | Registra alterações manuais nos prazos dos chamados. |
+| `perfis` | Os três níveis de acesso: colaborador, tecnico, admin |
+| `usuarios` | Contas, com controle de bloqueio por falhas de login |
+| `tokens_usuario` | Tokens (em hash) de confirmação de e-mail e redefinição de senha |
+| `dominios_autorizados` | Domínios de e-mail permitidos no autocadastro |
 
-### Figura 1 — Diagrama Entidade-Relacionamento do Sistema de Chamados de TI.
-![Diagrama do banco de dados](./imagens/modelagem-banco-dados.png)
+### Chamados
+| Tabela | Finalidade |
+|---|---|
+| `categorias` | Categorias e subcategorias (auto-relacionamento) |
+| `chamados` | Solicitações de suporte, com os três prazos |
+| `mensagens` | Conversa entre solicitante e TI (imutável) |
+| `notas_internas` | Observações privadas da equipe de TI |
+| `anexos` | Metadados dos arquivos (o arquivo fica no disco) |
+
+### Histórico
+| Tabela | Finalidade |
+|---|---|
+| `historico_status` | Mudanças de status |
+| `historico_prioridades` | Mudanças de prioridade |
+| `historico_atribuicoes` | Atribuições e transferências |
+| `historico_prazos` | Alterações de prazo, previsão e extensão de limite |
+
+### Apoio
+| Tabela | Finalidade |
+|---|---|
+| `prazos_prioridade` | Prazos de atribuição e resolução por prioridade, em minutos úteis |
+| `configuracoes` | Expediente, limites de anexo, retenção, bloqueio de login |
+| `notificacoes` | Notificações dentro do sistema |
+| `solucoes` | Base de conhecimento (Fase 2) |
+| `log_seguranca` | Auditoria de login e de acessos negados |
 
 
-## 10.3. Relacionamentos e integridade
+## 4. Integridade
 
-O banco utilizará chaves primárias (PK) e estrangeiras (FK) para estabelecer os relacionamentos entre as tabelas.
+**Restrições de valor** (aplicadas como enums ou `CHECK` no banco):
+- `status` ∈ {aberto, em_atendimento, concluido, cancelado}; `prioridade` ∈ {baixa, media, alta}.
+- `previsao_conclusao <= limite_resolucao`.
+- `tec_responsavel_id <> solicitante_id` (ninguém atende o próprio chamado).
+- `status = concluido` exige `solucao_aplicada`.
 
-Também serão utilizadas restrições de integridade para garantir a consistência dos dados, incluindo:
-- Campos obrigatórios.
-- Valores únicos.
-- Valores permitidos para status e prioridade.
-- Relacionamentos entre usuários, chamados, categorias e históricos.
+**Exclusão:** nada é apagado fisicamente. Usuários e categorias são desativados (`ativo = false`). Chaves estrangeiras usam `ON DELETE RESTRICT`, para que o banco impeça apagar algo com histórico.
 
-## 10.4. Segurança dos dados
+**Imutabilidade:** `mensagens` e as tabelas `historico_*` só recebem inserções. A aplicação não edita nem exclui essas linhas.
 
-As seguintes medidas serão consideradas na implementação:
+**Transações:** operações compostas (atribuir, transferir, concluir, cancelar) gravam o chamado, o histórico e as notificações em uma única transação (RNF10). Ao atribuir ou transferir, o chamado é bloqueado com `SELECT ... FOR UPDATE` para evitar duas atribuições simultâneas.
 
-- Senhas armazenadas por meio de hash seguro.
-- Tokens armazenados por meio de hash.
-- Controle de acesso conforme o perfil do usuário.
-- Validação das operações realizadas no sistema.
-- Proteção dos registros internos da equipe de TI.
-- Preservação do histórico de operações importantes.
+**Índices:** em `chamados` por `status`, `prioridade`, `solicitante_id`, `tec_responsavel_id`, `categoria_id`, `criado_em` e `(status, tec_responsavel_id)`; em `mensagens` e `notas_internas` por `(chamado_id, criado_em)`; em `notificacoes` por `(usuario_id, lida_em)`; em `solucoes`, índice GIN de busca textual em português (Fase 2).
 
-As permissões serão aplicadas principalmente na camada de aplicação (Flask), complementadas pelas restrições do banco de dados.
+## 5. Dados iniciais (seed)
 
-## 10.5. Armazenamento de anexos
+Criados por comando (`flask seed`), de forma repetível:
+- Perfis: colaborador, tecnico, admin.
+- `prazos_prioridade`: alta 60/480, média 120/630, baixa 300/1890.
+- `configuracoes`: expediente 08:00–18:30, dias úteis 1–5, limites de anexo, retenção 7 + 3 dias, alerta de 20%, bloqueio de login (5 falhas, 15 min).
+- Categorias iniciais: Equipamentos (computador, monitor, teclado, impressora) e Programas (sistemas internos, navegador, e-mail).
+- O primeiro administrador é criado por `flask criar-admin`.
+- Para demonstração: `flask seed-demo` cria usuários e chamados de exemplo.
 
-Os arquivos enviados pelos colaboradores não serão armazenados diretamente no PostgreSQL.
+## 6. Anexos
 
-O banco armazenará apenas os metadados dos anexos, incluindo:
-- Nome original.
-- Nome armazenado.
-- Caminho do arquivo.
-- Tipo.
-- Tamanho.
-- Estado de preservação.
-- Data de exclusão lógica.
+Os arquivos ficam em `instance/uploads/`, fora do banco e fora de `static/`. O banco guarda nome original, nome armazenado (UUID), caminho relativo, tipo detectado, tamanho, hash, estado de preservação e data de exclusão lógica. Nunca se usa o nome original do usuário para gravar no disco.
 
-Os arquivos físicos serão armazenados separadamente, seguindo as regras de acesso e retenção definidas para o sistema.
+## 7. Acesso à base e segurança
 
-## 10.6. Histórico e rastreabilidade
+- O app usa um usuário do banco com permissões só sobre as tabelas do sistema (não o superusuário).
+- Senhas e tokens são guardados como hash.
+- As permissões de negócio são aplicadas na camada de aplicação; o banco reforça a integridade.
 
-O sistema manterá registros específicos para acompanhar:
-- Alterações de status.
-- Atribuições e transferências de técnicos.
-- Alterações de prazos.
-- Mensagens e notas internas.
+## 8. Backup
 
-Esses registros permitirão consultar o histórico de atendimento de cada chamado.
+- Backup diário do PostgreSQL (`pg_dump`) e da pasta `instance/uploads/`.
+- Cópias em local protegido, com teste periódico de restauração.
+- Política de retenção definida na implantação.
 
-## 10.7. Backup
+## 9. Situação atual
 
-O planejamento de backup contempla:
-- Backup diário do PostgreSQL.
-- Backup dos arquivos armazenados separadamente.
-- Armazenamento protegido das cópias.
-- Testes periódicos de restauração.
+Modelo lógico v2.0 fechado e validado. Próximos passos:
 
-A política definitiva de retenção será estabelecida durante a implantação.
-
-## 10.8. Situação atual
-
-A modelagem lógica inicial foi estruturada no dbdiagram.io, contemplando 12 tabelas e seus relacionamentos.
-
-**Próximas atividades:**
-1. Revisar o modelo lógico durante a implementação.
-2. Exportar o modelo para SQL compatível com PostgreSQL.
-3. Criar o banco de dados no ambiente local.
-4. Executar os scripts de criação das tabelas.
-5. Validar os relacionamentos e as restrições.
-6. Configurar a conexão entre Flask e PostgreSQL.
-
-A implementação física do banco permanece pendente.
+1. Conferir o diagrama no dbdiagram.io com o `banco.dbml`.
+2. Subir o PostgreSQL local (Docker Compose).
+3. Escrever os models e gerar a primeira migration.
+4. Executar `flask seed` e validar relacionamentos e restrições.

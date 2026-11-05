@@ -6,7 +6,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
-.vscode/
+.vscode/sim
 *.log
 .DS_Store
 Thumbs.db
@@ -18,3 +18,5 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+instance/
+node_modules/
