@@ -20,3 +20,4 @@ dist/
 *.egg-info/
 instance/
 node_modules/
+*.db
