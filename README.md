@@ -13,14 +13,12 @@ Python · Flask (Blueprints) · Jinja2 (HTML) · Tailwind CSS · JavaScript · P
 | Documento | Conteúdo |
 |---|---|
 | [REQUISITOS.md](/docs/REQUISITOS.md) | Objetivo, escopo, perfis, requisitos funcionais e não funcionais, MVP x Fase 2 |
-| [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md) | Prazos, expediente, estados, retenção de anexos, notificações |
-| [PERMISSOES.md](PERMISSOES.md) | Matriz de acesso por perfil e política de segurança |
-| [FLUXOS.md](FLUXOS.md) | Diagramas: ciclo de vida, atribuição, cadastro, senha, anexos |
-| [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md) | Modelo de dados (18 tabelas) e regras de integridade |
-| [banco.dbml](banco.dbml) | Modelo para colar no dbdiagram.io |
-| [ARQUITETURA.md](ARQUITETURA.md) | Camadas, estrutura de pastas, execução em Linux/Windows |
-| [TELAS_E_ROTAS.md](TELAS_E_ROTAS.md) | Mapa de páginas, URLs e quem acessa cada uma |
-| [DECISOES.md](DECISOES.md) | Registro das decisões e dos motivos |
+| [REGRAS_DE_NEGOCIO.md](/docs/REGRAS_DE_NEGOCIO.md) | Prazos, expediente, estados, retenção de anexos, notificações |
+| [PERMISSOES.md](/docs/PERMISSOES.md) | Matriz de acesso por perfil e política de segurança |
+| [FLUXOS.md](/docs/FLUXOS.md) | Diagramas: ciclo de vida, atribuição, cadastro, senha, anexos |
+| [BANCO_DE_DADOS.md](/docs/BANCO_DE_DADOS.md) | Modelo de dados (18 tabelas) e regras de integridade |
+| [banco.dbml](/docs/banco.dbml) | Modelo para colar no dbdiagram.io |
+| [ARQUITETURA.md](/docs/ARQUITETURA.md) | Camadas, estrutura de pastas, execução em Linux/Windows |
 
 ## Fases
 
