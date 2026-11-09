@@ -1,6 +1,9 @@
 from flask import Flask
 from app.config import Config
 from app.extensions import db, migrate 
+from app.models.perfil import Perfil
+from app.models.usuario import Usuario
+
 
 def create_app():
     app = Flask(__name__)
@@ -12,4 +15,6 @@ def create_app():
     @app.get("/health")
     def health():
         return{"Status": "ok"}
+    
+    from app import models
     return app  
