@@ -12,7 +12,7 @@ Python · Flask (Blueprints) · Jinja2 (HTML) · Tailwind CSS · JavaScript · P
 
 | Documento | Conteúdo |
 |---|---|
-| [REQUISITOS.md](REQUISITOS.md) | Objetivo, escopo, perfis, requisitos funcionais e não funcionais, MVP x Fase 2 |
+| [REQUISITOS.md](./docs/REQUISITOS.md) | Objetivo, escopo, perfis, requisitos funcionais e não funcionais, MVP x Fase 2 |
 | [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md) | Prazos, expediente, estados, retenção de anexos, notificações |
 | [PERMISSOES.md](PERMISSOES.md) | Matriz de acesso por perfil e política de segurança |
 | [FLUXOS.md](FLUXOS.md) | Diagramas: ciclo de vida, atribuição, cadastro, senha, anexos |
