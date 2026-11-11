@@ -3,6 +3,7 @@ from app.config import Config
 from app.extensions import db, migrate 
 from app.models.perfil import Perfil
 from app.models.usuario import Usuario
+from app.models.configuracao import Configuracao
 from app.models.categoria import Categoria
 from app.models.chamado import Chamado
 

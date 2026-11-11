@@ -5,6 +5,14 @@ from datetime import datetime
 
 class Chamado(db.Model):
     __tablename__ = "chamados"
+    __table_args__ = (
+        db.CheckConstraint("status IN ('aberto', 'em_atendimento', 'concluido', 'cancelado')", name="ck_chamados_status"),
+        db.CheckConstraint("prioridade IN ('baixa', 'media', 'alta')", name="ck_chamados_prioridade"),
+        db.CheckConstraint("prioridade_solicitada IN ('baixa', 'media', 'alta')", name="ck_chamados_prioridade_solicitada"),
+        db.CheckConstraint("previsao_conclusao IS NULL OR limite_resolucao IS NULL OR previsao_conclusao <= limite_resolucao", name="ck_chamados_previsao"),
+        db.CheckConstraint("tec_responsavel_id IS NULL OR tec_responsavel_id <> solicitante_id", name="ck_chamados_tecnico_solicitante"),
+        db.CheckConstraint("status <> 'concluido' OR solucao_aplicada IS NOT NULL", name="ck_chamados_concluido_solucao"),
+    )
     
     id: Mapped[int] = mapped_column(primary_key=True)
     numero: Mapped[str] = mapped_column(db.String(20), unique=True)
@@ -17,7 +25,6 @@ class Chamado(db.Model):
     prioridade: Mapped[str] = mapped_column(db.String(20))
     status: Mapped[str] = mapped_column(db.String(30), default="aberto")
     solucao_aplicada: Mapped[str | None] = mapped_column(db.Text)
-    solucao_usada_id: Mapped[int | None] = mapped_column(db.ForeignKey("solucoes.id"))
     prazo_atribuicao: Mapped[datetime] = mapped_column(db.DateTime(timezone=True))
     atribuido_em: Mapped[datetime | None] = mapped_column(db.DateTime(timezone=True))
     limite_resolucao: Mapped[datetime | None] = mapped_column(db.DateTime(timezone=True))
