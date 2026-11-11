@@ -6,6 +6,7 @@ from app.models.usuario import Usuario
 from app.models.configuracao import Configuracao
 from app.models.categoria import Categoria
 from app.models.chamado import Chamado
+from app.models.prazo_prioridade import PrazoPrioridade
 
 
 def create_app():
