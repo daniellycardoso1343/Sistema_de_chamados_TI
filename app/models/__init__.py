@@ -8,3 +8,5 @@ from app.models.dominio_autorizado import DominioAutorizado
 from app.models.token_usuario import TokenUsuario
 from app.models.mensagem import Mensagem
 from app.models.solucao import Solucao
+from app.models.anexo import Anexo
+from app.models.historico_atribuicao import HistoricoAtribuicao
