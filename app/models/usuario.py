@@ -3,7 +3,6 @@ from app.extensions import db
 from datetime import datetime
 
 
-
 class Usuario(db.Model):
     __tablename__ = "usuarios"
     
