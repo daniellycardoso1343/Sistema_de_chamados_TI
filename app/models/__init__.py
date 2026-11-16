@@ -11,3 +11,5 @@ from app.models.solucao import Solucao
 from app.models.anexo import Anexo
 from app.models.historico_atribuicao import HistoricoAtribuicao
 from app.models.historico_prazo import HistoricoPrazo
+from app.models.notificacao import Notificacao
+from app.models.nota_interna import NotaInterna
