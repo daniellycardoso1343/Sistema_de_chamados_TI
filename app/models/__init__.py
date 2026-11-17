@@ -13,3 +13,4 @@ from app.models.historico_atribuicao import HistoricoAtribuicao
 from app.models.historico_prazo import HistoricoPrazo
 from app.models.notificacao import Notificacao
 from app.models.nota_interna import NotaInterna
+from app.models.log_seguranca import LogSeguranca
