@@ -96,7 +96,9 @@ sistema-chamados-ti/
 │
 ├── migrations/
 ├── tests/                       conftest.py, test_permissoes.py, test_prazos.py, test_chamados.py
-└── docs/
+├── docs/
+└── scripts/
+    └── conferir_models.py       compara os models com o banco.dbml e confere se esta tudo de acordo.
 ```
 
 ## 5. Responsabilidades dos módulos

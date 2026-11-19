@@ -12,18 +12,19 @@ class Chamado(db.Model):
         db.CheckConstraint("previsao_conclusao IS NULL OR limite_resolucao IS NULL OR previsao_conclusao <= limite_resolucao", name="ck_chamados_previsao"),
         db.CheckConstraint("tec_responsavel_id IS NULL OR tec_responsavel_id <> solicitante_id", name="ck_chamados_tecnico_solicitante"),
         db.CheckConstraint("status <> 'concluido' OR solucao_aplicada IS NOT NULL", name="ck_chamados_concluido_solucao"),
+        db.Index("ix_chamados_status_tecnico", "status", "tec_responsavel_id"),
     )
     
     id: Mapped[int] = mapped_column(primary_key=True)
     numero: Mapped[str] = mapped_column(db.String(20), unique=True)
-    solicitante_id: Mapped[int] = mapped_column(db.ForeignKey("usuarios.id"))
-    tec_responsavel_id: Mapped[int | None] = mapped_column(db.ForeignKey("usuarios.id"))
-    categoria_id: Mapped[int] = mapped_column(db.ForeignKey("categorias.id"))
+    solicitante_id: Mapped[int] = mapped_column(db.ForeignKey("usuarios.id"), index=True)
+    tec_responsavel_id: Mapped[int | None] = mapped_column(db.ForeignKey("usuarios.id"), index=True)
+    categoria_id: Mapped[int] = mapped_column(db.ForeignKey("categorias.id"), index=True)
     titulo: Mapped[str] = mapped_column(db.String(250))
     descricao: Mapped[str] = mapped_column(db.Text)
     prioridade_solicitada: Mapped[str] = mapped_column(db.String(20))
-    prioridade: Mapped[str] = mapped_column(db.String(20))
-    status: Mapped[str] = mapped_column(db.String(30), default="aberto")
+    prioridade: Mapped[str] = mapped_column(db.String(20), index=True)
+    status: Mapped[str] = mapped_column(db.String(30), default="aberto", index=True)
     solucao_aplicada: Mapped[str | None] = mapped_column(db.Text)
     prazo_atribuicao: Mapped[datetime] = mapped_column(db.DateTime(timezone=True))
     atribuido_em: Mapped[datetime | None] = mapped_column(db.DateTime(timezone=True))
@@ -35,4 +36,4 @@ class Chamado(db.Model):
     encerrado_em: Mapped[datetime | None] = mapped_column(db.DateTime(timezone=True))
     cancelado_em: Mapped[datetime | None] = mapped_column(db.DateTime(timezone=True))
     chamado_relacionado_id: Mapped[int | None] = mapped_column(db.ForeignKey("chamados.id"))
-    criado_em: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), server_default=db.func.now())
+    criado_em: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), server_default=db.func.now(), index=True)
