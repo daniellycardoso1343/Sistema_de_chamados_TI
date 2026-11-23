@@ -21,3 +21,4 @@ dist/
 instance/
 node_modules/
 *.db
+app/static/css/output.css
