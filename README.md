@@ -2,7 +2,7 @@
 
 Aplicação web para centralizar solicitações de suporte técnico: colaboradores abrem e acompanham chamados, o administrador distribui as demandas e os técnicos atendem, com controle de prazos, histórico completo e acesso restrito por perfil.
 
-**Versão da documentação:** 2.0 · **Status:** especificação fechada, implementação não iniciada.
+**Versão da documentação:** 2.0 · 
 
 ## Stack
 
